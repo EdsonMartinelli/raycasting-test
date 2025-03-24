@@ -6,16 +6,6 @@ import {
 } from "./raycasting.js";
 import { Vec2 } from "./vec2.js";
 
-// expect.extend({
-//   toBeFoo: (received: number, expected: number) => {
-//     error++;
-//     return {
-//       message: () => `expected ${received} to be foo`,
-//       pass: true,
-//     };
-//   },
-// });
-
 const { MAP } = await vi.hoisted(async () => {
   const { MAP } = await import("./testSettings.js");
   await import("./vec2");
@@ -41,14 +31,17 @@ describe("DDA Function", () => {
       return false;
     }
 
-    const mapPos: Vec2 = { x: 1, y: 1 };
-    const newPos: Vec2 = { x: mapPos.x + 0.5, y: mapPos.y + 0.5 };
+    const pos = {
+      x: Math.random() * (MAP[0].length - 3) + 1,
+      y: Math.random() * (MAP.length - 3) + 1,
+    };
+    const mapPos: Vec2 = { x: Math.floor(pos.x), y: Math.floor(pos.y) };
     const rayDir: Vec2 = { x: -1, y: 0 };
     points.push(mapPos);
 
     findPerpendicularDistance({
       mapPos,
-      newPos,
+      newPos: pos,
       rayDir,
       hitFunction: hitFunction,
     });
@@ -56,7 +49,7 @@ describe("DDA Function", () => {
     expect(points.length).toBeGreaterThanOrEqual(2);
 
     if (points.length == 2) {
-      const sideDist = findSidesVector(rayDir, mapPos, newPos);
+      const sideDist = findSidesVector(rayDir, mapPos, pos);
       const mapNextMove = {
         x: rayDir.x > 0 ? 1 : -1,
         y: rayDir.y > 0 ? 1 : -1,

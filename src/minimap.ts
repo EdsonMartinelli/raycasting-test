@@ -15,13 +15,13 @@ export function drawMinimap(
   euclidianDistArray: Vec2[],
   ctx: CanvasRenderingContext2D
 ) {
-  drawBorderMiniMap(ctx);
-  paintMiniMap(pos, ctx);
-  drawRaysMiniMap(euclidianDistArray, ctx);
-  drawPlayerMiniMap(ctx);
+  drawMinimapBorder(ctx);
+  drawMinimapWalls(pos, ctx);
+  drawMinimapRays(euclidianDistArray, ctx);
+  drawMinimapPlayer(ctx);
 }
 
-function resizeRayOutOfMiniMap(euclidianDist: Vec2) {
+function resizeRayOutOfMinimap(euclidianDist: Vec2) {
   const maxRayDist = MINIMAP_ZOOM;
 
   const delimitedRay = { x: euclidianDist.x, y: euclidianDist.y };
@@ -43,7 +43,7 @@ function resizeRayOutOfMiniMap(euclidianDist: Vec2) {
   return delimitedRay;
 }
 
-function drawPlayerMiniMap(ctx: CanvasRenderingContext2D) {
+function drawMinimapPlayer(ctx: CanvasRenderingContext2D) {
   paintCircle(
     {
       x: MINIMAP_ZOOM * PIXEL_SIZE + MINIMAP_POSITION_X,
@@ -55,16 +55,16 @@ function drawPlayerMiniMap(ctx: CanvasRenderingContext2D) {
   );
 }
 
-function drawRaysMiniMap(
+function drawMinimapRays(
   euclidianDistArray: Vec2[],
   ctx: CanvasRenderingContext2D
 ) {
   for (let i = 0; i < euclidianDistArray.length; i++) {
-    const euclidianDistMiniMap = resizeRayOutOfMiniMap(euclidianDistArray[i]);
+    const euclidianDistMinimap = resizeRayOutOfMinimap(euclidianDistArray[i]);
 
-    const wallHitMiniMap = {
-      x: MINIMAP_ZOOM + euclidianDistMiniMap.x,
-      y: MINIMAP_ZOOM + euclidianDistMiniMap.y,
+    const wallHitMinimap = {
+      x: MINIMAP_ZOOM + euclidianDistMinimap.x,
+      y: MINIMAP_ZOOM + euclidianDistMinimap.y,
     };
 
     paintLine(
@@ -73,8 +73,8 @@ function drawRaysMiniMap(
         y: MINIMAP_ZOOM * PIXEL_SIZE + MINIMAP_POSITION_Y,
       },
       {
-        x: wallHitMiniMap.x * PIXEL_SIZE + MINIMAP_POSITION_X,
-        y: wallHitMiniMap.y * PIXEL_SIZE + MINIMAP_POSITION_Y,
+        x: wallHitMinimap.x * PIXEL_SIZE + MINIMAP_POSITION_X,
+        y: wallHitMinimap.y * PIXEL_SIZE + MINIMAP_POSITION_Y,
       },
       RGB.white,
       ctx
@@ -82,7 +82,7 @@ function drawRaysMiniMap(
   }
 }
 
-function drawBorderMiniMap(ctx: CanvasRenderingContext2D) {
+function drawMinimapBorder(ctx: CanvasRenderingContext2D) {
   paintRect(
     {
       x: -0.5 * PIXEL_SIZE + MINIMAP_POSITION_X,
@@ -97,11 +97,11 @@ function drawBorderMiniMap(ctx: CanvasRenderingContext2D) {
   );
 }
 
-function paintMiniMap(pos: Vec2, ctx: CanvasRenderingContext2D) {
-  const offSetJ = pos.y - MINIMAP_ZOOM;
-  const offSetI = pos.x - MINIMAP_ZOOM;
-  const floorOffSetJ = Math.floor(offSetJ);
-  const floorOffSetI = Math.floor(offSetI);
+function drawMinimapWalls(pos: Vec2, ctx: CanvasRenderingContext2D) {
+  const offsetJ = pos.y - MINIMAP_ZOOM;
+  const offsetI = pos.x - MINIMAP_ZOOM;
+  const floorOffSetJ = Math.floor(offsetJ);
+  const floorOffSetI = Math.floor(offsetI);
 
   for (let j = 0; j < MINIMAP_ZOOM * 2 + 1; j++) {
     for (let i = 0; i < MINIMAP_ZOOM * 2 + 1; i++) {
@@ -109,42 +109,52 @@ function paintMiniMap(pos: Vec2, ctx: CanvasRenderingContext2D) {
       const pixelSize = getPixelSize(
         j,
         i,
-        offSetI - floorOffSetI,
-        offSetJ - floorOffSetJ
+        offsetJ - floorOffSetJ,
+        offsetI - floorOffSetI
       );
       const pixelPos = getPixelPos(
         j,
         i,
-        offSetI - floorOffSetI,
-        offSetJ - floorOffSetJ
+        offsetJ - floorOffSetJ,
+        offsetI - floorOffSetI
       );
       paintRect(pixelPos, pixelSize, color, ctx);
     }
   }
 }
 
-function getPixelColor(jPos: number, iPos: number) {
+export function getPixelColor(jPos: number, iPos: number): string {
   if (jPos > MAP.length - 1 || jPos < 0) return RGB.black;
   if (iPos < 0 || iPos > MAP[0].length - 1) return RGB.black;
   return colors[MAP[jPos][iPos]];
 }
 
-function getPixelPos(j: number, i: number, offSetI: number, offSetJ: number) {
+export function getPixelPos(
+  j: number,
+  i: number,
+  offsetJ: number,
+  offsetI: number
+): Vec2 {
   const pos = {
-    x: (i - offSetI) * PIXEL_SIZE + MINIMAP_POSITION_X,
-    y: (j - offSetJ) * PIXEL_SIZE + MINIMAP_POSITION_Y,
+    x: (i - offsetI) * PIXEL_SIZE + MINIMAP_POSITION_X,
+    y: (j - offsetJ) * PIXEL_SIZE + MINIMAP_POSITION_Y,
   };
   if (i == 0) pos.x = i * PIXEL_SIZE + MINIMAP_POSITION_X;
   if (j == 0) pos.y = j * PIXEL_SIZE + MINIMAP_POSITION_Y;
   return pos;
 }
 
-function getPixelSize(j: number, i: number, offSetI: number, offSetJ: number) {
+export function getPixelSize(
+  j: number,
+  i: number,
+  offsetJ: number,
+  offsetI: number
+): { w: number; h: number } {
   const size = { w: PIXEL_SIZE, h: PIXEL_SIZE };
-  if (i == 0) size.w = (1 - offSetI) * PIXEL_SIZE;
-  if (j == 0) size.h = (1 - offSetJ) * PIXEL_SIZE;
+  if (i == 0) size.w = (1 - offsetI) * PIXEL_SIZE;
+  if (j == 0) size.h = (1 - offsetJ) * PIXEL_SIZE;
 
-  if (i == MINIMAP_ZOOM * 2) size.w = offSetI * PIXEL_SIZE;
-  if (j == MINIMAP_ZOOM * 2) size.h = offSetJ * PIXEL_SIZE;
+  if (i == MINIMAP_ZOOM * 2) size.w = offsetI * PIXEL_SIZE;
+  if (j == MINIMAP_ZOOM * 2) size.h = offsetJ * PIXEL_SIZE;
   return size;
 }

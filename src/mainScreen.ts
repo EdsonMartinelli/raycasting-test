@@ -5,7 +5,7 @@ import {
   rotate,
   walk,
 } from "./input.js";
-import { drawMinimap } from "./mainMiniMap.js";
+import { drawMinimap } from "./minimap.js";
 import { paintLine } from "./paint.js";
 import { calculteLineHeight, findPerpendicularDistance } from "./raycasting.js";
 import { CANVAS_HEIGHT, CANVAS_WIDTH, colors, MAP, RGB } from "./settings.js";
