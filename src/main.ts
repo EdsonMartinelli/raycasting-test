@@ -24,7 +24,7 @@ let timePerFrame = 1000 / FPS;
 start();
 
 function start() {
-  const canvas = document.getElementById("canvas2") as HTMLCanvasElement;
+  const canvas = document.getElementById("canvas") as HTMLCanvasElement;
   if (!canvas) return null;
 
   canvas.width = CANVAS_WIDTH;
