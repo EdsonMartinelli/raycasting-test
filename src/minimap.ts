@@ -1,4 +1,4 @@
-import { pos } from "./mainScreen.js";
+import { pos } from "./main.js";
 import { paintCircle, paintLine, paintRect } from "./paint.js";
 import {
   colors,
