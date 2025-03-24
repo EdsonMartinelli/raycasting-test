@@ -43,7 +43,7 @@ vi.mock("./settings.js", () => {
   };
 });
 
-vi.mock("./mainScreen.js", () => {
+vi.mock("./main.js", () => {
   return {
     pos: {
       x: Math.random() * (MAP[0].length - 3) + 1,
