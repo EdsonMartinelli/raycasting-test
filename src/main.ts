@@ -9,7 +9,7 @@ import { drawMinimap } from "./minimap.js";
 import { paintLine } from "./paint.js";
 import { calculteLineHeight, findPerpendicularDistance } from "./raycasting.js";
 import { CANVAS_HEIGHT, CANVAS_WIDTH, colors, MAP, RGB } from "./settings.js";
-import { getPerpVec, Vec2 } from "./vec2.js";
+import { getPerpVec, lengthVector, Vec2 } from "./vec2.js";
 
 export const pos = { x: 3, y: 9 };
 export let direction = { x: 1, y: 0 };
@@ -87,7 +87,7 @@ function drawScene(ctx: CanvasRenderingContext2D) {
   ctx.reset();
 
   for (let i = 0; i < CANVAS_WIDTH; i++) {
-    const offsetXViewport = (2 * i) / CANVAS_WIDTH - 1;
+    const offsetXViewport = 1 - (2 * i) / CANVAS_WIDTH;
 
     const rayDirection = {
       x: perpRayDir.x * offsetXViewport + rayDir.x,
@@ -95,10 +95,8 @@ function drawScene(ctx: CanvasRenderingContext2D) {
     };
 
     const { perpDist, mapHit } = findPerpendicularDistance({
-      mapPos: { x: Math.floor(pos.x), y: Math.floor(pos.y) },
-      newPos: pos,
-      rayDir: rayDirection,
-      hitFunction: hitFunction,
+      initialPos: pos,
+      rayDirection,
     });
 
     const euclidianDist = {
@@ -115,7 +113,7 @@ function drawScene(ctx: CanvasRenderingContext2D) {
   drawMinimap(euclidianDistArray, ctx);
 }
 
-function hitFunction(mapPos: Vec2) {
-  if (MAP[mapPos.y][mapPos.x] > 0) return true;
-  return false;
-}
+// function hitFunction(mapPos: Vec2) {
+//   if (MAP[mapPos.y][mapPos.x] > 0) return true;
+//   return false;
+// }

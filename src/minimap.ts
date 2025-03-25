@@ -64,7 +64,7 @@ function drawMinimapRays(
 
     const wallHitMinimap = {
       x: MINIMAP_ZOOM + euclidianDistMinimap.x,
-      y: MINIMAP_ZOOM + euclidianDistMinimap.y,
+      y: MINIMAP_ZOOM - euclidianDistMinimap.y, // NEGATIVE Y AXIS IN CANVAS
     };
 
     paintLine(

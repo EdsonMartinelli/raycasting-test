@@ -47,24 +47,24 @@ export function walk(pos: Vec2, direction: Vec2) {
     pos.x += moveVector.x * WALK_SPEED;
 
   if (
-    MAP[Math.floor(pos.y + moveVector.y * WALK_SPEED)][Math.floor(pos.x)] == 0
+    MAP[Math.floor(pos.y - moveVector.y * WALK_SPEED)][Math.floor(pos.x)] == 0
   )
-    pos.y += moveVector.y * WALK_SPEED;
+    pos.y -= moveVector.y * WALK_SPEED; // NEGATIVE Y AXIS IN CANVAS
 }
 export function rotate(direction: Vec2) {
   const oldDir = { x: direction.x, y: direction.y };
-  const rotateAngle = (mouseOffsetX / CANVAS_WIDTH) * ROTATE_SPEED;
-
-  // direction.x =
-  //   direction.x * Math.cos(-rotateAngle) - direction.y * Math.sin(-rotateAngle);
-  direction.y =
-    direction.y * Math.cos(-rotateAngle) - direction.x * Math.sin(-rotateAngle);
-
-  // direction.y =
-  //   oldDir.x * Math.sin(-rotateAngle) + direction.y * Math.cos(-rotateAngle);
+  const rotateAngle = -(mouseOffsetX / CANVAS_WIDTH) * ROTATE_SPEED;
 
   direction.x =
-    oldDir.y * Math.sin(-rotateAngle) + direction.x * Math.cos(-rotateAngle);
+    direction.x * Math.cos(rotateAngle) - direction.y * Math.sin(rotateAngle);
+  // direction.y =
+  //   direction.y * Math.cos(-rotateAngle) - direction.x * Math.sin(-rotateAngle);
+
+  direction.y =
+    oldDir.x * Math.sin(rotateAngle) + direction.y * Math.cos(rotateAngle);
+
+  // direction.x =
+  //   oldDir.y * Math.sin(-rotateAngle) + direction.x * Math.cos(-rotateAngle);
 
   mouseOffsetX = 0;
 }
@@ -88,13 +88,13 @@ function generateMoveVector(direction: Vec2) {
   const perpDirVector = getPerpVec(direction);
 
   if (keySet.has(RIGHT_KEY)) {
-    moveVector.x += perpDirVector.x;
-    moveVector.y += perpDirVector.y;
+    moveVector.x -= perpDirVector.x;
+    moveVector.y -= perpDirVector.y;
   }
 
   if (keySet.has(LEFT_KEY)) {
-    moveVector.x -= perpDirVector.x;
-    moveVector.y -= perpDirVector.y;
+    moveVector.x += perpDirVector.x;
+    moveVector.y += perpDirVector.y;
   }
 
   moveVector = normalizeVector(moveVector);

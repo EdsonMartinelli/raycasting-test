@@ -1,36 +1,42 @@
-import { CANVAS_HEIGHT } from "./settings.js";
+import { CANVAS_HEIGHT, MAP } from "./settings.js";
 import { Vec2 } from "./vec2.js";
 
 type DDAFunction = {
-  mapPos: Vec2;
-  newPos: Vec2;
-  rayDir: Vec2;
-  hitFunction: (mapPos: Vec2) => boolean;
+  initialPos: Vec2;
+  rayDirection: Vec2;
 };
 
 export function findPerpendicularDistance({
-  mapPos: initialMapPos,
-  newPos: initialPos,
-  rayDir,
-  hitFunction,
+  initialPos,
+  rayDirection,
 }: DDAFunction) {
-  const mapPos = { x: initialMapPos.x, y: initialMapPos.y };
-  const newPos = { x: initialPos.x, y: initialPos.y };
+  const pos = { x: initialPos.x, y: initialPos.y };
+  const mapPos = { x: Math.floor(pos.x), y: Math.floor(pos.y) };
+  let side: "x" | "y" = "x";
+
+  if (hitFunction(mapPos)) {
+    return {
+      perpDist: 0,
+      mapHit: { x: mapPos.x, y: mapPos.y },
+      side,
+    };
+  }
 
   const deltaDist = {
-    x: rayDir.x == 0 ? Infinity : Math.abs(1 / rayDir.x),
-    y: rayDir.y == 0 ? Infinity : Math.abs(1 / rayDir.y),
+    x: rayDirection.x == 0 ? Infinity : Math.abs(1 / rayDirection.x),
+    y: rayDirection.y == 0 ? Infinity : Math.abs(1 / rayDirection.y),
   };
 
-  const sideDist = findSidesSize(rayDir, mapPos, newPos);
+  const sideDist = findSidesSize(rayDirection, pos, mapPos);
   sideDist.x = sideDist.x * deltaDist.x;
   sideDist.y = sideDist.y * deltaDist.y;
 
-  let side: "x" | "y" = "x";
-
   let hit = false;
 
-  const step = { x: rayDir.x > 0 ? 1 : -1, y: rayDir.y > 0 ? 1 : -1 };
+  const step = {
+    x: rayDirection.x > 0 ? 1 : -1,
+    y: rayDirection.y > 0 ? -1 : 1, // NEGATIVE Y AXIS IN CANVAS
+  };
 
   while (hit == false) {
     if (sideDist.x < sideDist.y) {
@@ -43,7 +49,7 @@ export function findPerpendicularDistance({
       side = "y";
     }
 
-    hit = hitFunction({ x: mapPos.x, y: mapPos.y });
+    hit = hitFunction(mapPos);
   }
 
   if (side == "x")
@@ -60,19 +66,28 @@ export function findPerpendicularDistance({
   };
 }
 
-export function findSidesSize(rayDir: Vec2, mapPos: Vec2, newPos: Vec2): Vec2 {
+export function hitFunction(mapPos: Vec2) {
+  if (mapPos.y > MAP.length - 1) return true;
+  if (mapPos.x > MAP[0].length - 1) return true;
+  if (mapPos.y < 0) return true;
+  if (mapPos.x < 0) return true;
+  if (MAP[mapPos.y][mapPos.x] > 0) return true;
+  return false;
+}
+
+export function findSidesSize(rayDir: Vec2, pos: Vec2, mapPos: Vec2): Vec2 {
   let sideDist = { x: 0, y: 0 };
 
   if (rayDir.x > 0) {
-    sideDist.x = mapPos.x + 1 - newPos.x;
+    sideDist.x = mapPos.x + 1 - pos.x;
   } else {
-    sideDist.x = newPos.x - mapPos.x;
+    sideDist.x = pos.x - mapPos.x;
   }
 
   if (rayDir.y > 0) {
-    sideDist.y = mapPos.y + 1 - newPos.y;
+    sideDist.y = pos.y - mapPos.y;
   } else {
-    sideDist.y = newPos.y - mapPos.y;
+    sideDist.y = mapPos.y + 1 - pos.y;
   }
 
   return sideDist;
@@ -93,62 +108,56 @@ export function calculteLineHeight(column: number, perpDist: number) {
 }
 //---------------------------------------------------
 
-export function findRayMY({
-  mapPos: initialMapPos,
-  newPos: initialPos,
-  rayDir,
-  hitFunction,
-}: DDAFunction) {
-  const mapPos = { x: initialMapPos.x, y: initialMapPos.y };
-  const newPos = { x: initialPos.x, y: initialPos.y };
-  let mapNextMove = { x: rayDir.x > 0 ? 1 : -1, y: rayDir.y > 0 ? 1 : -1 };
+export function findRayMY({ initialPos, rayDirection }: DDAFunction) {
+  const pos = { x: initialPos.x, y: initialPos.y };
+  const mapPos = { x: Math.floor(pos.x), y: Math.floor(pos.y) };
+  let mapNextMove = {
+    x: rayDirection.x > 0 ? 1 : -1,
+    y: rayDirection.y > 0 ? 1 : -1,
+  };
   let sideDist = { x: 0, y: 0 };
 
   let hit = false;
   while (!hit) {
-    sideDist = findSidesVector(rayDir, mapPos, newPos);
+    sideDist = findSidesVector(rayDirection, pos, mapPos);
 
     const proportion = {
-      x: rayDir.x == 0 ? Infinity : sideDist.x / rayDir.x,
-      y: rayDir.y == 0 ? Infinity : sideDist.y / rayDir.y,
+      x: rayDirection.x == 0 ? Infinity : sideDist.x / rayDirection.x,
+      y: rayDirection.y == 0 ? Infinity : sideDist.y / rayDirection.y,
     };
 
     if (proportion.x == proportion.y) {
       mapPos.x += mapNextMove.x;
       mapPos.y -= mapNextMove.y;
-      newPos.x += proportion.x * rayDir.x;
-      newPos.y -= proportion.y * rayDir.y;
+      pos.x += proportion.x * rayDirection.x;
+      pos.y -= proportion.y * rayDirection.y;
     } else if (proportion.x < proportion.y) {
       mapPos.x += mapNextMove.x;
-      newPos.x += proportion.x * rayDir.x;
-      newPos.y -= proportion.x * rayDir.y;
+      pos.x += proportion.x * rayDirection.x;
+      pos.y -= proportion.x * rayDirection.y;
     } else {
       mapPos.y -= mapNextMove.y;
-      newPos.x += proportion.y * rayDir.x;
-      newPos.y -= proportion.y * rayDir.y;
+      pos.x += proportion.y * rayDirection.x;
+      pos.y -= proportion.y * rayDirection.y;
     }
 
     hit = hitFunction({ x: mapPos.x, y: mapPos.y });
   }
 }
 
-export function findSidesVector(
-  rayDir: Vec2,
-  mapPos: Vec2,
-  newPos: Vec2
-): Vec2 {
+export function findSidesVector(rayDir: Vec2, pos: Vec2, mapPos: Vec2): Vec2 {
   let sideDist = { x: 0, y: 0 };
 
   if (rayDir.x > 0) {
-    sideDist.x = mapPos.x + 1 - newPos.x;
+    sideDist.x = mapPos.x + 1 - pos.x;
   } else {
-    sideDist.x = mapPos.x - newPos.x;
+    sideDist.x = mapPos.x - pos.x;
   }
 
   if (rayDir.y > 0) {
-    sideDist.y = newPos.y - mapPos.y;
+    sideDist.y = pos.y - mapPos.y;
   } else {
-    sideDist.y = -(mapPos.y + 1 - newPos.y);
+    sideDist.y = -(mapPos.y + 1 - pos.y);
   }
 
   return sideDist;

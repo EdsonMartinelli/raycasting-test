@@ -1,179 +1,286 @@
-import { describe, expect, test, vi } from "vitest";
 import {
-  findPerpendicularDistance,
-  findSidesSize,
-  findSidesVector,
-} from "./raycasting.js";
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  test,
+  vi,
+} from "vitest";
+import { findSidesSize } from "./raycasting.js";
 import { Vec2 } from "./vec2.js";
 
-const { MAP } = await vi.hoisted(async () => {
-  const { MAP } = await import("./testSettings.js");
-  await import("./vec2");
-  return {
-    MAP,
-    CANVAS_HEIGHT: MAP.length,
-  };
-});
+describe("Function: findPerpendicularDistance", () => {
+  beforeEach(() => {
+    vi.doUnmock("./settings.js");
+    vi.resetModules();
+  });
 
-vi.mock("./settings.js", () => {
-  return {
-    MAP: MAP,
-  };
-});
+  test("if the perpDist is 0 and mapHit is the same as player when player is in a wall", async () => {
+    vi.doMock("./settings.js", () => {
+      return {
+        MAP: [[1]],
+      };
+    });
+    const { findPerpendicularDistance: mockedFindPerpendicularDistance } =
+      await import("./raycasting.js");
 
-describe("DDA Function", () => {
-  test("if the DDA algorithm generate a continuous line", () => {
-    const points: Vec2[] = [];
-
-    function hitFunction(mapPos: Vec2) {
-      points.push(mapPos);
-      if (MAP[mapPos.x][mapPos.y] > 0) return true;
-      return false;
-    }
-
-    const pos = {
-      x: Math.random() * (MAP[0].length - 3) + 1,
-      y: Math.random() * (MAP.length - 3) + 1,
-    };
-    const mapPos: Vec2 = { x: Math.floor(pos.x), y: Math.floor(pos.y) };
-    const rayDir: Vec2 = { x: -1, y: 0 };
-    points.push(mapPos);
-
-    findPerpendicularDistance({
-      mapPos,
-      newPos: pos,
-      rayDir,
-      hitFunction: hitFunction,
+    const { perpDist, mapHit } = mockedFindPerpendicularDistance({
+      initialPos: { x: 0, y: 0 },
+      rayDirection: { x: -1, y: 0 },
     });
 
-    expect(points.length).toBeGreaterThanOrEqual(2);
+    expect(perpDist).toBe(0);
+    expect(mapHit).toEqual({ x: 0, y: 0 });
+  });
 
-    if (points.length == 2) {
-      const sideDist = findSidesVector(rayDir, mapPos, pos);
-      const mapNextMove = {
-        x: rayDir.x > 0 ? 1 : -1,
-        y: rayDir.y > 0 ? 1 : -1,
+  test("if function returns correct values when the ray hits the map boundary by the x axis", async () => {
+    vi.doMock("./settings.js", () => {
+      return {
+        MAP: [[0]],
       };
+    });
+    const { findPerpendicularDistance: mockedFindPerpendicularDistance } =
+      await import("./raycasting.js");
 
-      const proportion = {
-        x: rayDir.x == 0 ? Infinity : sideDist.x / rayDir.x,
-        y: rayDir.y == 0 ? Infinity : sideDist.y / rayDir.y,
+    const res = mockedFindPerpendicularDistance({
+      initialPos: { x: 0.5, y: 0.5 },
+      rayDirection: { x: -1, y: 0 },
+    });
+
+    expect(res).toEqual({
+      perpDist: 0.5,
+      mapHit: {
+        x: -1,
+        y: 0,
+      },
+      side: "x",
+    });
+  });
+
+  test("if function returns correct values when the ray hits the map boundary by the y axis", async () => {
+    vi.doMock("./settings.js", () => {
+      return {
+        MAP: [[0]],
       };
+    });
+    const { findPerpendicularDistance: mockedFindPerpendicularDistance } =
+      await import("./raycasting.js");
 
-      if (proportion.x <= proportion.y) {
-        expect(MAP[mapPos.x + mapNextMove.x][mapPos.y]).toBeGreaterThan(0);
-      } else {
-        expect(MAP[mapPos.x][mapPos.y + mapNextMove.y]).toBeGreaterThan(0);
-      }
-    } else {
-      for (let i = 1; i < points.length; i++) {
-        const distX = Math.abs(points[i].x - points[i - 1].x);
-        const distY = Math.abs(points[i].y - points[i - 1].y);
+    const res = mockedFindPerpendicularDistance({
+      initialPos: { x: 0.5, y: 0.5 },
+      rayDirection: { x: 0, y: -1 },
+    });
 
-        expect(distX).toBeLessThanOrEqual(1);
-        expect(distY).toBeLessThanOrEqual(1);
-        expect(Math.abs(distX - distY)).toBe(1);
-      }
-    }
+    expect(res).toEqual({
+      perpDist: 0.5,
+      mapHit: {
+        x: 0,
+        y: 1,
+      },
+      side: "y",
+    });
+  });
+
+  test("if function returns correct values when the ray hits a wall by the x axis", async () => {
+    vi.doMock("./settings.js", () => {
+      return {
+        MAP: [[1, 0]],
+      };
+    });
+    const { findPerpendicularDistance: mockedFindPerpendicularDistance } =
+      await import("./raycasting.js");
+
+    const res = mockedFindPerpendicularDistance({
+      initialPos: { x: 1.5, y: 0.5 },
+      rayDirection: { x: -1, y: 0 },
+    });
+
+    expect(res).toEqual({
+      perpDist: 0.5,
+      mapHit: {
+        x: 0,
+        y: 0,
+      },
+      side: "x",
+    });
+  });
+
+  test("if function returns correct values when the ray hits a wall by y the axis", async () => {
+    vi.doMock("./settings.js", () => {
+      return {
+        MAP: [[0], [1]],
+      };
+    });
+    const { findPerpendicularDistance: mockedFindPerpendicularDistance } =
+      await import("./raycasting.js");
+
+    const res = mockedFindPerpendicularDistance({
+      initialPos: { x: 0.5, y: 0.5 },
+      rayDirection: { x: 0, y: -1 },
+    });
+
+    expect(res).toEqual({
+      perpDist: 0.5,
+      mapHit: {
+        x: 0,
+        y: 1,
+      },
+      side: "y",
+    });
+  });
+
+  test("if function returns correct values when ray is not orthogonal to standard euclidian basis", async () => {
+    vi.doMock("./settings.js", () => {
+      return {
+        MAP: [
+          [1, 1, 1],
+          [1, 0, 1],
+          [1, 1, 1],
+        ],
+      };
+    });
+    const { findPerpendicularDistance: mockedFindPerpendicularDistance } =
+      await import("./raycasting.js");
+
+    const res = mockedFindPerpendicularDistance({
+      initialPos: { x: 1.5, y: 1.5 },
+      rayDirection: { x: 1, y: 1 },
+    });
+
+    expect(res).toEqual({
+      perpDist: 0.5,
+      mapHit: {
+        x: 1,
+        y: 0,
+      },
+      side: "y",
+    });
   });
 });
 
-describe("Find sides size with", () => {
-  test("if right distance is correct", () => {
-    const offsetX = Math.random();
-    const offsetY = Math.random();
+describe("Function: findSidesSize", () => {
+  test("if right distance is correct in the x axis", () => {
+    const mapPos = { x: 0, y: 0 };
+    const pos = { x: mapPos.x + 0.2, y: mapPos.y + 0.2 };
+    const rayDirRight = { x: 1, y: 0 };
 
-    const mapPos: Vec2 = { x: 12, y: 12 };
-    const newPos: Vec2 = { x: mapPos.x + offsetX, y: mapPos.y + offsetY };
-    const rayDirRight: Vec2 = { x: 1, y: 0 };
-
-    const sideDist = findSidesSize(rayDirRight, mapPos, newPos);
-    expect(sideDist.x).toBeCloseTo(1 - offsetX);
+    const sideDist = findSidesSize(rayDirRight, pos, mapPos);
+    expect(sideDist.x).toBeCloseTo(0.8);
   });
 
-  test("if left distance is correct", () => {
-    const offsetX = Math.random();
-    const offsetY = Math.random();
+  test("if left distance is correct in the x axis", () => {
+    const mapPos = { x: 0, y: 0 };
+    const pos = { x: mapPos.x + 0.2, y: mapPos.y + 0.2 };
+    const rayDirLeft = { x: -1, y: 0 };
 
-    const mapPos: Vec2 = { x: 12, y: 12 };
-    const newPos: Vec2 = { x: mapPos.x + offsetX, y: mapPos.y + offsetY };
-    const rayDirRight: Vec2 = { x: -1, y: 0 };
-
-    const sideDist = findSidesSize(rayDirRight, mapPos, newPos);
-    expect(sideDist.x).toBeCloseTo(offsetX);
+    const sideDist = findSidesSize(rayDirLeft, pos, mapPos);
+    expect(sideDist.x).toBeCloseTo(0.2);
   });
 
-  test("if up distance is correct", () => {
-    const offsetX = Math.random();
-    const offsetY = Math.random();
+  test("if up distance is correct in the y axis", () => {
+    const mapPos = { x: 0, y: 0 };
+    const pos = { x: mapPos.x + 0.2, y: mapPos.y + 0.2 };
+    const rayDirUp = { x: 0, y: 1 };
 
-    const mapPos: Vec2 = { x: 12, y: 12 };
-    const newPos: Vec2 = { x: mapPos.x + offsetX, y: mapPos.y + offsetY };
-    const rayDirUp: Vec2 = { x: 0, y: 1 };
-
-    const sideDist = findSidesSize(rayDirUp, mapPos, newPos);
-    expect(sideDist.y).toBeCloseTo(1 - offsetY);
+    const sideDist = findSidesSize(rayDirUp, pos, mapPos);
+    expect(sideDist.y).toBeCloseTo(0.2);
   });
 
-  test("if down distance is correct", () => {
-    const offsetX = Math.random();
-    const offsetY = Math.random();
+  test("if down distance is correct in the y axis", () => {
+    const mapPos = { x: 0, y: 0 };
+    const pos = { x: mapPos.x + 0.2, y: mapPos.y + 0.2 };
+    const rayDirDown = { x: 0, y: -1 };
 
-    const mapPos: Vec2 = { x: 12, y: 12 };
-    const newPos: Vec2 = { x: mapPos.x + offsetX, y: mapPos.y + offsetY };
-    const rayDirUp: Vec2 = { x: 0, y: -1 };
+    const sideDist = findSidesSize(rayDirDown, pos, mapPos);
+    expect(sideDist.y).toBeCloseTo(0.8);
+  });
 
-    const sideDist = findSidesSize(rayDirUp, mapPos, newPos);
-    expect(sideDist.y).toBeCloseTo(offsetY);
+  test("if distance is correct for positive axes", () => {
+    const mapPos = { x: 0, y: 0 };
+    const pos = { x: mapPos.x + 0.2, y: mapPos.y + 0.2 };
+    const rayDir = { x: 1, y: 2 };
+
+    const sideDist = findSidesSize(rayDir, pos, mapPos);
+    expect(sideDist.x).toBeCloseTo(0.8);
+    expect(sideDist.y).toBeCloseTo(0.2);
+  });
+
+  test("if distance is correct for negative axes", () => {
+    const mapPos = { x: 0, y: 0 };
+    const pos = { x: mapPos.x + 0.2, y: mapPos.y + 0.2 };
+    const rayDir = { x: -1, y: -2 };
+
+    const sideDist = findSidesSize(rayDir, pos, mapPos);
+    expect(sideDist.x).toBeCloseTo(0.2);
+    expect(sideDist.y).toBeCloseTo(0.8);
+  });
+
+  test("if distance is correct given a negative x axis and positive y axis ", () => {
+    const mapPos = { x: 0, y: 0 };
+    const pos = { x: mapPos.x + 0.2, y: mapPos.y + 0.2 };
+    const rayDir = { x: -1, y: 2 };
+
+    const sideDist = findSidesSize(rayDir, pos, mapPos);
+    expect(sideDist.x).toBeCloseTo(0.2);
+    expect(sideDist.y).toBeCloseTo(0.2);
+  });
+
+  test("if distance is correct given a positive x axis and negative y axis ", () => {
+    const mapPos = { x: 0, y: 0 };
+    const pos = { x: mapPos.x + 0.2, y: mapPos.y + 0.2 };
+    const rayDir = { x: 1, y: -2 };
+
+    const sideDist = findSidesSize(rayDir, pos, mapPos);
+    expect(sideDist.x).toBeCloseTo(0.8);
+    expect(sideDist.y).toBeCloseTo(0.8);
   });
 });
 
-describe("Find sides vector with Top left zero", () => {
-  test("if right vector is correct on its axis", () => {
-    const offsetX = Math.random();
-    const offsetY = Math.random();
+describe("Function: hitFunction", () => {
+  let mockedHitFunction: (mapPos: Vec2) => boolean;
+  beforeAll(async () => {
+    vi.doUnmock("./settings.js");
+    vi.resetModules();
 
-    const mapPos: Vec2 = { x: 12, y: 12 };
-    const newPos: Vec2 = { x: mapPos.x + offsetX, y: mapPos.y + offsetY };
-    const rayDirRight: Vec2 = { x: 1, y: 0 };
-
-    const sideDist = findSidesVector(rayDirRight, mapPos, newPos);
-    expect(sideDist.x).toBeCloseTo(1 - offsetX);
+    vi.doMock("./settings.js", () => {
+      return {
+        MAP: [
+          [1, 0],
+          [0, 0],
+        ],
+      };
+    });
+    const { hitFunction: newHitFunction } = await import("./raycasting.js");
+    mockedHitFunction = newHitFunction;
   });
 
-  test("if left vector is correct on its axis", () => {
-    const offsetX = Math.random();
-    const offsetY = Math.random();
-
-    const mapPos: Vec2 = { x: 12, y: 12 };
-    const newPos: Vec2 = { x: mapPos.x + offsetX, y: mapPos.y + offsetY };
-    const rayDirRight: Vec2 = { x: -1, y: 0 };
-
-    const sideDist = findSidesVector(rayDirRight, mapPos, newPos);
-    expect(sideDist.x).toBeCloseTo(-offsetX);
+  it("returns true when cel is a wall", async () => {
+    const res = mockedHitFunction({ x: 0, y: 0 });
+    expect(res).toBe(true);
   });
 
-  test("if up vector is correct on its axis", () => {
-    const offsetX = Math.random();
-    const offsetY = Math.random();
-
-    const mapPos: Vec2 = { x: 12, y: 12 };
-    const newPos: Vec2 = { x: mapPos.x + offsetX, y: mapPos.y + offsetY };
-    const rayDirUp: Vec2 = { x: 0, y: 1 };
-
-    const sideDist = findSidesVector(rayDirUp, mapPos, newPos);
-    expect(sideDist.y).toBeCloseTo(offsetY);
+  it("returns false when cel is not a wall ", async () => {
+    const res = mockedHitFunction({ x: 1, y: 0 });
+    expect(res).toBe(false);
   });
 
-  test("if down vector is correct on its axis", () => {
-    const offsetX = Math.random();
-    const offsetY = Math.random();
+  it("returns true when one or both indexes are less than zero ", async () => {
+    const res1 = mockedHitFunction({ x: -1, y: 0 });
+    const res2 = mockedHitFunction({ x: 0, y: -1 });
+    const res3 = mockedHitFunction({ x: -1, y: -1 });
+    expect(res1).toBe(true);
+    expect(res2).toBe(true);
+    expect(res3).toBe(true);
+  });
 
-    const mapPos: Vec2 = { x: 12, y: 12 };
-    const newPos: Vec2 = { x: mapPos.x + offsetX, y: mapPos.y + offsetY };
-    const rayDirUp: Vec2 = { x: 0, y: -1 };
-
-    const sideDist = findSidesVector(rayDirUp, mapPos, newPos);
-    expect(sideDist.y).toBeCloseTo(offsetY - 1);
+  it("returns true when one or both indexes are beyond map boundary ", async () => {
+    const res1 = mockedHitFunction({ x: 9, y: 0 });
+    const res2 = mockedHitFunction({ x: 0, y: 9 });
+    const res3 = mockedHitFunction({ x: 9, y: 9 });
+    expect(res1).toBe(true);
+    expect(res2).toBe(true);
+    expect(res3).toBe(true);
   });
 });
